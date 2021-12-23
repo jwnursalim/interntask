@@ -1,9 +1,13 @@
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import ListGroup from 'react-bootstrap/ListGroup'
+import CloseButton from 'react-bootstrap/CloseButton'
+import Button from 'react-bootstrap/Button'
 import Form from 'react-bootstrap/Form'
 import { getOverlayDirection } from "react-bootstrap/esm/helpers";
+import axios from "axios";
+import { idText } from "typescript";
+import { BASE_URL } from "./BaseURL"
 
 // fake data generator
 const getItems = (count: any) =>
@@ -12,6 +16,7 @@ const getItems = (count: any) =>
     content: `${k}`
   }));
 
+var finalArray = []
 
 // a little function to help us with reordering the result
 const reorder = (list: any, startIndex:any, endIndex:any) => {
@@ -49,15 +54,30 @@ const getListStyle = (isDraggingOver:any)=> ({
   padding: "35px",
 });
 
-export default class Drag extends Component<{}, {items: any, stuff: any}> {
+const tempBox: Array<string> = ["Hello", "Dog", "Cat"]
+
+export default class Drag extends Component<{data: any, long: number, type1: string, auto: any, call: any}, {items: any, stuff: any, filterData:any, refresh: boolean}> {
   constructor(props:any) {
     super(props);
+    var filterData = []
+    if(this.props.type1 === "DONE"){
+        filterData = this.props.data.filter((x: any) => x.status === "DONE")
+    }
+    else{
+        filterData = this.props.data.filter((x: any) => x.status === "OPEN")
+    }
+    console.log(filterData.length)
     this.state = {
-      items: getItems(3),
-      stuff: ["Hello", "Dog", "Cat"]
+      items: getItems(filterData.length),
+      stuff: ["Hello", "Dog", "Cat"],
+      filterData: [],
+      refresh: false
     };
     this.onDragEnd = this.onDragEnd.bind(this);
+    this.handleCheck = this.handleCheck.bind(this);
+    this.deleteTask = this.deleteTask.bind(this)
   }
+
 
   onDragEnd(result:any) {
     // dropped outside the list
@@ -76,43 +96,119 @@ export default class Drag extends Component<{}, {items: any, stuff: any}> {
     });
   }
 
+  handleCheck(e: any){
+    console.log(e.target.checked)
+    if(e.target.checked){
+        axios.patch(BASE_URL + "/" + e.target.id + "/status",{
+            status: "DONE"
+        })
+        .then((r) => this.props.auto())
+    }
+    else{
+        axios.patch(BASE_URL + "/" + e.target.id + "/status",{
+            status: "OPEN"
+        })
+        .then((r) => this.props.auto())
+    }
+    
+  }
+
+  deleteTask(e: any){
+    if (window.confirm('Are you sure you want to delete?')) {
+        axios
+        .delete(BASE_URL + "/" + e.target.id)
+        .then(() => {
+        alert("Post deleted!");
+        this.props.auto()
+        }); 
+    } else {
+        // Do nothing!
+        alert('Delete cancelled');
+      }
+    
+  }
+
+
+  getFilter = () => {
+      const {data} = this.props
+      var filterData: any = []
+      var check = false
+      if(this.props.type1 === "DONE"){
+        filterData = this.props.data.filter((x: any) => x.status === "DONE")
+        check = true
+      }
+      else{
+        filterData = this.props.data.filter((x: any) => x.status === "OPEN")
+        check = false
+      }
+      console.log(filterData)
+      if(filterData.length === 0){
+          return <div className="drag-box2"></div>
+      }
+      else{
+        var temp: any = []
+        return (
+          <DragDropContext onDragEnd={this.onDragEnd}>
+            <Droppable droppableId="droppable">
+              {(provided:any, snapshot:any) => (
+                <div
+                  {...provided.droppableProps}
+                  ref={provided.innerRef}
+                  style={getListStyle(snapshot.isDraggingOver)}
+                >
+                  {
+                  this.state.items.map((item:any, index:any) => (
+                    <Draggable key={item.id} draggableId={item.id} index={index}>
+                      {(provided:any, snapshot:any) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          {...provided.dragHandleProps}
+                          style={getItemStyle(
+                            snapshot.isDragging,
+                            provided.draggableProps.style
+                          )}
+                          className="drag-box"
+                         
+                        >
+                            <Form.Check type="checkbox"
+                            style={{textDecoration: "line-through;"}}
+                            label={filterData[item.content].title} 
+                            onChange={this.handleCheck}
+                            id={filterData[item.content].id}
+                            checked={check}
+                            />
+                            <CloseButton className="del-btn" 
+                            onClick={this.deleteTask}
+                            id={filterData[item.content].id}/>
+                            <Button onClick={() => this.props.call(filterData[item.content].id)} 
+                            id={filterData[item.content].id}
+                            variant="light" className="patch-btn">Edit</Button>
+                        </div>
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
+        );
+
+      }
+      
+  }
+
   // Normally you would want to split things out into separate components.
   // But in this example everything is just done in one place for simplicity
   render() {
-    return (
-      <DragDropContext onDragEnd={this.onDragEnd}>
-        <Droppable droppableId="droppable">
-          {(provided:any, snapshot:any) => (
-            <div
-              {...provided.droppableProps}
-              ref={provided.innerRef}
-              style={getListStyle(snapshot.isDraggingOver)}
-            >
-              {this.state.items.map((item:any, index:any) => (
-                <Draggable key={item.id} draggableId={item.id} index={index}>
-                  {(provided:any, snapshot:any) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      {...provided.dragHandleProps}
-                      style={getItemStyle(
-                        snapshot.isDragging,
-                        provided.draggableProps.style
-                      )}
-                      className="drag-box"
-                    >
-                    <Form.Check type="checkbox" label={this.state.stuff[item.content]} />
-                   
-                    </div>
-                  )}
-                </Draggable>
-              ))}
-              {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
-      </DragDropContext>
-    );
+      return(
+          <>
+            {this.getFilter()}
+          </>
+      )
+        
+   
   }
 }
 

@@ -13,11 +13,35 @@ body{
 
 .drag-box{
   background-color: red;
+  position: relative;
+}
+
+.drag-box2{
+  background:  white;
+  border-radius: 10px;
+  box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+  margin: auto;
+  width: 400px;
+  height: 100px;
+  margin-top: 5%;
+  padding: 35px;
+}
+
+.patch-btn{
+  position: absolute;
+  right: 15%;
+  top: 8px;
 }
 
 .add-btn{
   position: absolute;
   right: 50px;
+}
+
+.del-btn{
+  position: absolute;
+  right: 5%;
+  top: 15px;
 }
 
 .cont{
@@ -40,4 +64,27 @@ body{
   margin: auto;
   padding: 50px;
   float: right;
+}
+
+.loader {
+  border: 16px solid #f3f3f3;
+  border-radius: 50%;
+  border-top: 16px solid #3498db;
+  width: 120px;
+  height: 120px;
+  -webkit-animation: spin 2s linear infinite; /* Safari */
+  animation: spin 2s linear infinite;
+  margin: auto;
+  margin-top: 10%;
+}
+
+/* Safari */
+@-webkit-keyframes spin {
+  0% { -webkit-transform: rotate(0deg); }
+  100% { -webkit-transform: rotate(360deg); }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
